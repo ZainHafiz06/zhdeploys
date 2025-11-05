@@ -1,5 +1,5 @@
-@import url(/root/components/components.css);
-@import url(/root/modules/modules.css);
+@import url(/components/components.css);
+@import url(/modules/modules.css);
 
 * {
     margin: 0;
