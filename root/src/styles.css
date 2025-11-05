@@ -1,0 +1,24 @@
+@import url(/root/components/components.css);
+@import url(/root/modules/modules.css);
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+
+    user-select: none;
+}
+
+*::-webkit-scrollbar {
+    display: none;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+a {
+    display: flex;
+
+    text-decoration: none;
+}
