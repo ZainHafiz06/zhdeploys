@@ -1,3 +1,6 @@
+@import url('./pages/Home.css');
+@import url('https://cdn.jsdelivr.net/gh/vista9083/mun@main/fonts/config.css');
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
