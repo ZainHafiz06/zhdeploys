@@ -19,7 +19,7 @@ export default function Home() {
                     loop 
                     playsInline
                 >
-                    <source src="src/assets/clip.mp4" type="video/mp4" />
+                    <source src="/clip.mp4" type="video/mp4" />
                 </video>
 
                 <h1 className="h-1">
