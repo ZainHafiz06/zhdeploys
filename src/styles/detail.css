@@ -1,0 +1,106 @@
+/* Readable, content-heavy chapter and research pages. They inherit the
+   chapter's palette so arriving from the story is not a hard context switch. */
+
+.detail {
+  min-height: 100svh;
+  padding: clamp(4rem, 12vh, 8rem) var(--gutter);
+  display: grid;
+  gap: clamp(2rem, 6vh, 4rem);
+  max-width: 68rem;
+  margin-inline: auto;
+  animation: detail-in 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes detail-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+.detail-back {
+  justify-self: start;
+}
+
+.detail-head {
+  display: grid;
+  gap: 1rem;
+}
+
+.detail-title {
+  font-size: var(--step-3);
+  color: var(--fg);
+}
+
+.detail-line {
+  font-size: var(--step-1);
+  color: var(--fg-dim);
+  max-width: 34ch;
+}
+
+.detail-plate {
+  width: min(420px, 70vw);
+}
+
+.detail-body {
+  display: grid;
+  gap: clamp(1.6rem, 4vh, 2.8rem);
+  color: var(--fg-dim);
+}
+
+.detail-body section {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.detail-list {
+  display: grid;
+  gap: 0.4rem;
+  font-size: var(--step--1);
+}
+
+.detail-list li::before {
+  content: "— ";
+  color: var(--fg-faint);
+}
+
+.detail-quote {
+  font-size: var(--step-1);
+  color: var(--fg);
+  border-left: 1px solid var(--accent);
+  padding-left: 1.2rem;
+}
+
+.detail-code {
+  overflow-x: auto;
+  padding: 1rem;
+  border: 1px solid var(--hairline);
+  font-size: var(--step--1);
+}
+
+.detail-metric span {
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  color: var(--fg);
+}
+
+.detail-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.detail-gallery figure {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.route-fallback {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  color: var(--fg-dim);
+  font-size: var(--step--1);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}

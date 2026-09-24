@@ -1,0 +1,176 @@
+/* ── Shared primitives ────────────────────────────────────────────────────
+   Chapter shell, metadata and cursor styles used by the readable project
+   pages (/work, /research). The home page stage has its own stylesheet.
+   ─────────────────────────────────────────────────────────────────────── */
+
+main {
+  position: relative;
+  z-index: 1;
+}
+
+.split-unit {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+
+.split-inner,
+[data-split-inner] {
+  display: inline-block;
+  will-change: transform;
+}
+
+/* ── chapter shell ────────────────────────────────────────────────────── */
+
+.chapter {
+  position: relative;
+  min-height: 100svh;
+  padding: clamp(6rem, 16vh, 12rem) var(--gutter) clamp(6rem, 14vh, 10rem)
+    calc(var(--gutter) + var(--rail));
+  display: grid;
+  align-content: center;
+  gap: clamp(2.5rem, 6vh, 5rem);
+}
+
+.chapter-head {
+  display: grid;
+  gap: 1rem;
+  max-width: 62ch;
+}
+
+.chapter-num {
+  display: block;
+}
+
+.chapter-title {
+  font-size: var(--step-4);
+  color: var(--fg);
+  margin: 0;
+}
+
+.chapter-line {
+  font-size: var(--step-1);
+  color: var(--fg);
+  letter-spacing: -0.01em;
+  max-width: 28ch;
+}
+
+.chapter-body {
+  display: grid;
+  gap: 1.6rem;
+  max-width: 68ch;
+  color: var(--fg-dim);
+}
+
+.chapter-lede {
+  font-size: var(--step-1);
+  color: var(--fg);
+  line-height: 1.35;
+}
+
+.chapter-context {
+  border-left: 1px solid var(--hairline);
+  padding-left: 1.1rem;
+  font-size: var(--step--1);
+}
+
+/* ── metadata ─────────────────────────────────────────────────────────── */
+
+.meta {
+  display: grid;
+  gap: 1.75rem;
+  margin-top: 0.5rem;
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem 2rem;
+  margin: 0;
+  border-top: 1px solid var(--hairline);
+  padding-top: 1.1rem;
+}
+
+.meta-row {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.meta-row dd {
+  margin: 0;
+  color: var(--fg);
+  font-size: var(--step--1);
+}
+
+.meta-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.4rem;
+}
+
+.meta-link {
+  position: relative;
+  font-size: var(--step--1);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg);
+  padding-bottom: 0.3rem;
+}
+
+.meta-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right center;
+  transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.meta-link:hover::after,
+.meta-link:focus-visible::after {
+  transform: scaleX(1);
+  transform-origin: left center;
+}
+
+/* ── cursor ───────────────────────────────────────────────────────────── */
+
+.cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  z-index: var(--z-cursor);
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #ffffff;
+  mix-blend-mode: difference;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  transition: width 320ms cubic-bezier(0.16, 1, 0.3, 1),
+    height 320ms cubic-bezier(0.16, 1, 0.3, 1), background-color 320ms ease;
+}
+
+.cursor.is-active {
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.cursor.has-label {
+  width: 62px;
+  height: 62px;
+}
+
+.cursor-label {
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  color: #050505;
+  mix-blend-mode: normal;
+}
+

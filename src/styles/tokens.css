@@ -1,0 +1,44 @@
+/* ── HOJ design tokens ────────────────────────────────────────────────────
+   Two typefaces only: Kode Mono (system/metadata/ASCII) and Archivo
+   (variable weight + width) as the single display face, whose expanded cut
+   echoes the horizontal distortion of the HIGH ON JAVA mark.
+   ─────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --font-mono: "Kode Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+
+  /* World palette — chapters animate these three, everything else derives. */
+  --bg: #050505;
+  --fg: #f2f2f0;
+  --accent: #f2f2f0;
+
+  --fg-dim: color-mix(in oklab, var(--fg) 55%, transparent);
+  --fg-faint: color-mix(in oklab, var(--fg) 26%, transparent);
+  --hairline: color-mix(in oklab, var(--fg) 14%, transparent);
+
+  --step--2: clamp(0.62rem, 0.6rem + 0.1vw, 0.7rem);
+  --step--1: clamp(0.72rem, 0.68rem + 0.2vw, 0.82rem);
+  --step-0: clamp(0.88rem, 0.84rem + 0.25vw, 1rem);
+  --step-1: clamp(1.1rem, 1rem + 0.6vw, 1.5rem);
+  --step-2: clamp(1.6rem, 1.3rem + 1.6vw, 2.8rem);
+  --step-3: clamp(2.4rem, 1.6rem + 4vw, 5.5rem);
+  --step-4: clamp(3.4rem, 1.5rem + 9vw, 11rem);
+
+  --gutter: clamp(1.25rem, 4vw, 4.5rem);
+  --measure: 34ch;
+
+  --rail: 2.25rem;
+  --z-cursor: 90;
+  --z-nav: 60;
+  --z-overlay: 70;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --rail: 1.25rem;
+  }
+}
+
+/* The world palette is interpolated in JS (see motion/useWorldPalette) so the
+   three variables stay in step across chapters. */

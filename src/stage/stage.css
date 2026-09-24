@@ -1,0 +1,647 @@
+/* ── The stage ────────────────────────────────────────────────────────────
+   One pinned viewport. The track provides scroll length; everything inside
+   .stage is positioned by the timeline, never by document flow.
+   ─────────────────────────────────────────────────────────────────────── */
+
+.hoj {
+  --sky: #2f5ab6;
+  --ink: #ffffff;
+  --blurb-w: min(340px, 27vw);
+  color: var(--ink);
+  font-family: "Kode Mono", ui-monospace, monospace;
+  background: var(--sky);
+}
+
+html:has(.hoj) {
+  background: var(--sky, #2f5ab6);
+  scrollbar-width: none;
+}
+html:has(.hoj)::-webkit-scrollbar {
+  display: none;
+}
+
+.track {
+  position: relative;
+}
+
+.stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  isolation: isolate;
+  contain: layout paint;
+}
+
+.sky,
+.sky-fallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.sky-fallback {
+  background:
+    radial-gradient(60% 50% at 85% 20%, rgba(214, 224, 250, 0.6), transparent 70%),
+    radial-gradient(50% 40% at 15% 90%, rgba(190, 205, 245, 0.55), transparent 70%),
+    linear-gradient(115deg, #2850aa 0%, #315fbf 45%, #507fe7 85%, #779bef 100%);
+}
+.sky {
+  display: block;
+  opacity: 0;
+  transition: opacity 0.9s ease;
+}
+.sky[data-ready] {
+  opacity: 1;
+}
+
+/* A deeper wash on the left so white blurbs stay legible over passing cloud. */
+.scrim {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(22, 44, 110, 0.55) 0%, rgba(22, 44, 110, 0.28) 30%, transparent 52%);
+}
+.is-narrow .scrim {
+  background: linear-gradient(0deg, rgba(22, 44, 110, 0.6) 0%, rgba(22, 44, 110, 0.3) 30%, transparent 48%);
+}
+
+/* ── title (Figma: Kode Mono 400/450, bold "java", white → grey fill) ── */
+
+.title-word {
+  position: absolute;
+  line-height: 1.28;
+  white-space: nowrap;
+  font-weight: 400;
+  letter-spacing: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+.title-word.bold {
+  font-weight: 700;
+}
+.title-word > span {
+  display: inline-block;
+  background: linear-gradient(90deg, #fff 0%, #fff 64%, #b9c0d2 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.title-word.bold > span {
+  background: none;
+  color: #fff;
+}
+.t-ja-shadow {
+  font-weight: 700;
+  transform-origin: 0 0;
+}
+.t-ja-shadow > span {
+  background: none;
+  color: rgba(0, 0, 0, 0.1);
+}
+.t-java {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* ── laptop: a WebGL model with the DOM screen projected onto its glass ── */
+
+.laptop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.laptop-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+}
+.screen {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #000;
+  backface-visibility: hidden;
+}
+/* Without WebGL there is no laptop body: give the screen its own bezel. */
+.laptop.no-gl .screen {
+  outline: 26px solid #0a0a0c;
+  box-shadow: 0 60px 120px -30px rgba(10, 20, 60, 0.6);
+}
+.screen .app {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.screen .mn,
+.screen .vq {
+  opacity: 0;
+}
+/* opening screen: the ASCII mug */
+.screen-mug {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  display: grid;
+  place-items: center;
+}
+.mug-art {
+  position: relative;
+  height: 540px;
+  aspect-ratio: 478 / 490;
+  margin-top: 150px;
+  overflow: hidden;
+}
+.mug-art img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.mug-sweep {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 35%, rgba(255, 255, 255, 0.28) 50%, transparent 65%);
+  background-size: 250% 100%;
+  mix-blend-mode: overlay;
+  animation: mug-sweep 4.2s cubic-bezier(0.6, 0, 0.4, 1) infinite;
+}
+@keyframes mug-sweep {
+  from { background-position: 120% 0; }
+  to { background-position: -20% 0; }
+}
+.mug-steam {
+  position: absolute;
+  left: 50%;
+  top: 30px;
+  width: 420px;
+  height: 250px;
+  margin-left: -300px;
+}
+.screen-glare {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(118deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.04) 34%, transparent 35%, transparent 100%);
+  mix-blend-mode: screen;
+}
+
+.pointer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+}
+.pointer-body {
+  position: relative;
+  transform-origin: 4px 4px;
+}
+.pointer-arrow {
+  display: block;
+  width: 28px;
+  height: 40px;
+  margin: -2px 0 0 -2px;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.35));
+}
+.pointer-dot {
+  position: absolute;
+  left: -9px;
+  top: -9px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(120, 120, 120, 0.6);
+  opacity: 0;
+}
+.pointer-ripple,
+.touch-ring {
+  position: absolute;
+  left: -26px;
+  top: -26px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid rgba(124, 92, 255, 0.8);
+  opacity: 0;
+}
+
+/* ── phone ── */
+
+.phone {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+.phone-float {
+  position: absolute;
+  inset: 0;
+  animation: float 8s ease-in-out infinite reverse;
+}
+.phone-body {
+  position: absolute;
+  inset: 0;
+  border-radius: 75px;
+  padding: 13px;
+  background: #0a0a0c;
+  box-shadow:
+    inset 0 0 0 2px #3a3b40,
+    inset 0 0 0 4px #1b1c20,
+    inset 0 0 0 5.5px #56585f,
+    0 60px 90px -40px rgba(10, 20, 60, 0.7),
+    -18px 30px 70px -30px rgba(10, 20, 60, 0.55);
+}
+.phone-screen {
+  position: relative;
+  border-radius: 62px;
+  overflow: hidden;
+  background: #0c0c0c;
+}
+.phone-screen .app {
+  position: absolute;
+  inset: 0;
+}
+.phone-island {
+  position: absolute;
+  left: 50%;
+  top: 11px;
+  width: 124px;
+  height: 36px;
+  margin-left: -62px;
+  border-radius: 20px;
+  background: #000;
+  z-index: 8;
+}
+.phone-home {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  width: 136px;
+  height: 5px;
+  margin-left: -68px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.75);
+  z-index: 8;
+}
+.phone-btn {
+  position: absolute;
+  width: 5px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #26272b, #4a4c52);
+}
+.phone-btn.b1 { left: -3px; top: 150px; height: 30px; }
+.phone-btn.b2 { left: -3px; top: 210px; height: 62px; }
+.phone-btn.b3 { left: -3px; top: 286px; height: 62px; }
+.phone-btn.b4 { right: -3px; top: 240px; height: 96px; }
+
+.touch {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 9;
+  opacity: 0;
+  pointer-events: none;
+}
+.touch-dot {
+  position: absolute;
+  left: -19px;
+  top: -19px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.28);
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(2px);
+}
+.touch-ring {
+  border-color: rgba(255, 255, 255, 0.85);
+}
+
+@keyframes float {
+  0%,
+  100% {
+    translate: 0 0;
+    rotate: 0deg;
+  }
+  50% {
+    translate: 0 -10px;
+    rotate: -0.4deg;
+  }
+}
+
+/* ── blurbs ── */
+
+.blurbs {
+  position: absolute;
+  left: max(24px, 5.5vw);
+  top: 50%;
+  width: var(--blurb-w);
+  translate: 0 -50%;
+  pointer-events: none;
+}
+.blurb {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  translate: 0 -50%;
+  opacity: 0;
+  text-shadow: 0 1px 18px rgba(12, 28, 80, 0.35);
+}
+.blurb-app {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  margin-bottom: 18px;
+}
+.blurb-app img {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  object-fit: cover;
+  box-shadow: 0 6px 16px rgba(10, 25, 80, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+.blurb h2 {
+  font-size: clamp(22px, 2.1vw, 30px);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+}
+.blurb p {
+  margin-top: 12px;
+  font-size: clamp(13px, 1vw, 15px);
+  font-weight: 400;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.is-narrow .blurbs {
+  left: 20px;
+  right: 20px;
+  top: auto;
+  bottom: max(28px, 7svh);
+  width: auto;
+  translate: none;
+}
+.is-narrow .blurb {
+  top: auto;
+  bottom: 0;
+  translate: none;
+  padding: 16px 18px 18px;
+  border-radius: 18px;
+  background: rgba(24, 46, 112, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+}
+.is-narrow .blurb-app {
+  margin-bottom: 10px;
+}
+
+/* ── outro ── */
+
+.outro {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 max(24px, 6vw);
+  pointer-events: none;
+}
+.outro-line {
+  font-size: clamp(44px, 9.5vw, 170px);
+  line-height: 0.98;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  opacity: 0;
+}
+.outro-line:nth-child(2) {
+  font-weight: 700;
+  align-self: flex-end;
+}
+.outro-foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: max(28px, 5svh);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  opacity: 0;
+}
+.outro-links {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+}
+.outro-links a {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(8px);
+  transition: background 0.3s, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.outro-links a:hover {
+  background: rgba(255, 255, 255, 0.22);
+  transform: translateY(-2px);
+}
+.social-icon {
+  width: 19px;
+  height: 19px;
+}
+.social-initial {
+  font-size: 15px;
+  font-weight: 700;
+}
+.outro-top {
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.75);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.outro-top:hover {
+  color: #fff;
+}
+
+/* ── chrome ── */
+
+.scroll-cue {
+  position: absolute;
+  left: max(24px, 2.4vw);
+  bottom: 28px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: #fff;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  z-index: 5;
+}
+.scroll-cue i {
+  position: relative;
+  width: 1px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.35);
+  overflow: hidden;
+}
+.scroll-cue i::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: -40%;
+  width: 1px;
+  height: 40%;
+  background: #fff;
+  animation: cue 1.8s cubic-bezier(0.7, 0, 0.3, 1) infinite;
+}
+@keyframes cue {
+  to {
+    top: 100%;
+  }
+}
+
+.topbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px max(24px, 2.4vw);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+  text-shadow: 0 1px 12px rgba(12, 28, 80, 0.45);
+}
+.topbar button {
+  font: inherit;
+  color: #fff;
+  background: none;
+  border: 0;
+  padding: 6px 0;
+  cursor: pointer;
+  pointer-events: auto;
+}
+/* Project index: app logos down the right edge, only after the opening. */
+.app-index {
+  position: fixed;
+  right: max(18px, 1.8vw);
+  top: 50%;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  translate: 12px -50%;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.5s ease,
+    translate 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.app-index.is-shown {
+  opacity: 1;
+  translate: 0 -50%;
+  pointer-events: auto;
+}
+.app-index button {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  cursor: pointer;
+  opacity: 0.5;
+  scale: 0.86;
+  transition:
+    opacity 0.3s,
+    scale 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.app-index button img {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  object-fit: cover;
+  display: block;
+  box-shadow:
+    0 6px 16px rgba(10, 25, 80, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+.app-index button:hover,
+.app-index button.on {
+  opacity: 1;
+  scale: 1;
+}
+.app-index button.on img {
+  box-shadow:
+    0 6px 16px rgba(10, 25, 80, 0.35),
+    0 0 0 2px #fff;
+}
+.app-index button:focus-visible {
+  outline: 1px solid #fff;
+  outline-offset: 4px;
+}
+.topbar button:focus-visible,
+.scroll-cue:focus-visible,
+.outro-links a:focus-visible,
+.outro-top:focus-visible {
+  outline: 1px solid #fff;
+  outline-offset: 4px;
+}
+
+.is-narrow .topbar {
+  padding: 16px 18px;
+  font-size: 12px;
+}
+.is-narrow .app-index {
+  right: 10px;
+  top: 38%;
+  gap: 10px;
+}
+.is-narrow .app-index button {
+  width: 28px;
+  height: 28px;
+}
+
+/* Before fonts settle, nothing is positioned yet — keep the frame clean. */
+.hoj:not(.is-ready) .title-word,
+.hoj:not(.is-ready) .laptop,
+.laptop:not(.is-loaded):not(.no-gl),
+.hoj:not(.is-ready) .phone {
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mug-sweep,
+  .phone-float,
+  .scroll-cue i::after {
+    animation: none;
+  }
+}
