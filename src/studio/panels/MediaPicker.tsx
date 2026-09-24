@@ -36,7 +36,7 @@ export function MediaPicker({
         ) : null}
 
         <input
-          placeholder="https:// or /projects/…"
+          placeholder="https:// or /projects/"
           value={value?.url ?? ""}
           onChange={(e) =>
             onChange(
@@ -72,7 +72,7 @@ export function MediaPicker({
           }}
         />
         <button className="btn btn-ghost" onClick={() => inputRef.current?.click()} disabled={busy}>
-          {busy ? "Uploading…" : "Upload"}
+          {busy ? "Uploading" : "Upload"}
         </button>
         {error && <span className="studio-error">{error}</span>}
       </div>

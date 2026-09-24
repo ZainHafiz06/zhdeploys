@@ -1,18 +1,11 @@
+import { ANTHROPIC_MODELS, CATALOG_SIZE, MUN_PICKS, VENDOR_GROUPS } from "./munCatalog";
+
 /**
  * MŪN, rebuilt from its own components (IntroState, ModelLibraryPage,
  * ChatMessage) at 1152 × 720 and scaled onto the laptop screen.
  */
 
 const V = "/projects/mun/vendors/";
-
-const VENDORS = [
-  { slug: "openai", label: "OpenAI", count: 3, logo: "openai.svg", blurb: "GPT: versatile generalists with strong tool use." },
-  { slug: "anthropic", label: "Anthropic", count: 3, logo: "anthropic.svg", blurb: "Claude: deep reasoning, long context, careful answers." },
-  { slug: "google", label: "Google", count: 2, logo: "google-color.svg", blurb: "Gemini: fast multimodal models with huge context." },
-  { slug: "meta", label: "Meta", count: 4, logo: "meta-color.svg", blurb: "Llama: open-weight workhorses at every size." },
-  { slug: "mistral", label: "Mistral", count: 3, logo: "mistral-color.svg", blurb: "Efficient open-weight and frontier models from Europe." },
-  { slug: "deepseek", label: "DeepSeek", count: 2, logo: "deepseek-color.svg", blurb: "Frontier-grade reasoning at open-source prices." },
-];
 
 const BANNER = [
   "openai.svg", "microsoft-color.svg", "nvidia-color.svg", "perplexity-color.svg", "anthropic.svg", "google-color.svg",
@@ -28,11 +21,7 @@ const SUGGESTIONS = [
   { tag: "Summarize", text: "Summarize the pros and cons of remote work", icon: "case" },
 ];
 
-const MODELS = [
-  { name: "Claude Sonnet 4.5", id: "anthropic/claude-sonnet-4.5", ctx: "1M ctx" },
-  { name: "Claude Opus 4.1", id: "anthropic/claude-opus-4.1", ctx: "200K ctx" },
-  { name: "Claude Haiku 4.5", id: "anthropic/claude-haiku-4.5", ctx: "200K ctx" },
-];
+const fmtCtx = (c: number) => (c >= 1_000_000 ? `${+(c / 1_000_000).toFixed(1)}M ctx` : `${Math.round(c / 1000)}K ctx`);
 
 export const MUN_QUERY = "Is it cheaper to rent or buy in Austin right now?";
 export const MUN_ANSWER =
@@ -167,11 +156,11 @@ function Intro() {
             </span>
             <span className="mn-chip mn-chip-new">
               <i style={{ background: "#e8855a" }} />
-              Claude Sonnet 4.5
+              {ANTHROPIC_MODELS[MUN_PICKS[0]].name}
             </span>
             <span className="mn-chip mn-chip-new2">
               <i style={{ background: "#e8855a" }} />
-              Claude Opus 4.1
+              {ANTHROPIC_MODELS[MUN_PICKS[1]].name}
             </span>
             <span className="mn-chip mn-manage">
               <Icon name="tune" />
@@ -223,13 +212,13 @@ function Library() {
           </div>
           <h1 className="mn-lib-title">Assemble your council</h1>
           <p className="mn-lib-sub">
-            Every public model, organized by the technology behind it. Free models are open to everyone — and your
+            Every public model, organized by the technology behind it. Free models are open to everyone, and your
             wallet unlocks the rest.
           </p>
           <div className="mn-search-row">
             <span className="mn-search">
               <Icon name="search" />
-              Search 342 models…
+              Search {CATALOG_SIZE} models
             </span>
             <span className="mn-filters">
               <Icon name="tune" />
@@ -239,17 +228,20 @@ function Library() {
 
           <div className="mn-swap">
           <div className="mn-grid">
-            {VENDORS.map((v) => (
+            {VENDOR_GROUPS.map((v) => (
               <div className={`mn-vendor mn-vendor-${v.slug}`} key={v.slug}>
                 <div className="mn-vendor-top">
-                  <span className="mn-mono">
-                    <img src={V + v.logo} alt="" />
-                  </span>
+                  {v.logo ? (
+                    <span className="mn-mono">
+                      <img src={V + v.logo} alt="" />
+                    </span>
+                  ) : (
+                    <span className="mn-mono mono-letter">{v.label.charAt(0)}</span>
+                  )}
                   <span className="mn-vendor-titles">
                     <b>{v.label}</b>
                     <small>
-                      {v.count} models
-                      {v.slug === "openai" && <em> · 1 active</em>}
+                      {v.count} model{v.count === 1 ? "" : "s"}
                     </small>
                   </span>
                   <Icon name="chev" />
@@ -274,7 +266,7 @@ function Library() {
               </span>
             </div>
             <div className="mn-rows">
-              {MODELS.map((m, i) => (
+              {ANTHROPIC_MODELS.map((m, i) => (
                 <div className={`mn-row mn-row-${i}`} key={m.id}>
                   <i className="mn-row-dot" />
                   <span className="mn-mono small">
@@ -284,8 +276,9 @@ function Library() {
                     <b>{m.name}</b>
                     <small>{m.id}</small>
                   </span>
-                  <span className="mn-badge">◉ vision</span>
-                  <span className="mn-badge">{m.ctx}</span>
+                  {m.free && <span className="mn-badge">free</span>}
+                  {m.vision && <span className="mn-badge">◉ vision</span>}
+                  <span className="mn-badge">{fmtCtx(m.ctx)}</span>
                   <Toggle />
                 </div>
               ))}
@@ -337,9 +330,9 @@ function Chat() {
           <div className="mn-model-cards">
             {[
               ["#4ade80", "ChatGPT", "Gpt 5.1"],
-              ["#e8855a", "Claude", "Sonnet 4.5"],
+              ["#e8855a", "Claude", "Sonnet 5"],
               ["#60a5fa", "Gemini", "Gemini 2.5 Pro"],
-              ["#e8855a", "Claude", "Opus 4.1"],
+              ["#e8855a", "Claude", "Opus 5.5"],
             ].map(([c, p, m]) => (
               <div className="mn-model-card" key={m}>
                 <i style={{ background: c }} />

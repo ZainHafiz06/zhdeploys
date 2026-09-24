@@ -26,7 +26,7 @@ export function LinksAdminPanel({ content, reload }: { content: SiteContent; rel
   };
 
   const remove = async (link: SiteLink) => {
-    if (!confirm(`Delete “${link.label}”?`)) return;
+    if (!confirm(`Delete "${link.label}"?`)) return;
     await supabase!.from("links").delete().eq("id", link.id);
     await reload();
   };

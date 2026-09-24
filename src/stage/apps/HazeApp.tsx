@@ -149,7 +149,7 @@ function AppBar({ active }: { active: string }) {
           <circle cx="7" cy="7" r="5" />
           <path d="M11 11l3.5 3.5" />
         </svg>
-        Search components…
+        Search components
         <kbd>⌘K</kbd>
       </span>
     </header>
@@ -196,13 +196,13 @@ function Detail() {
             <span className="c-str hz-code-radius">10px</span>
             <span className="c-str">"</span>
             <span className="c-tag">&gt;</span>
-            {"\n  …\n"}
+            {"\n  ...\n"}
             <span className="c-tag">&lt;/nav&gt;</span>
           </pre>
         </div>
         <aside className="hz-panel">
           <p className="hz-panel-title">Customize</p>
-          <p className="hz-muted small">Variables only — the framework stays untouched.</p>
+          <p className="hz-muted small">Variables only. The framework stays untouched.</p>
           <label className="hz-field">
             <span>Accent</span>
             <span className="hz-swatches">
@@ -252,7 +252,7 @@ const CODE_LINES = [
   ["c-tag:<div ", "c-attr:class", "t:=", "c-str:\"haze-card-", "c-num hz-type:2", "c-str:\"", "c-tag:>"],
   ["t:  ", "c-tag:<img ", "c-attr:src", "t:=", "c-str:\"aurora.jpg\"", "c-tag: />"],
   ["t:  ", "c-tag:<h3>", "t:Northern lights", "c-tag:</h3>"],
-  ["t:  ", "c-tag:<p>", "t:Tonight, 11pm — clear skies.", "c-tag:</p>"],
+  ["t:  ", "c-tag:<p>", "t:Tonight, 11pm, clear skies.", "c-tag:</p>"],
   ["t:  ", "c-tag:<button ", "c-attr:class", "t:=", "c-str:\"haze-btn-1\"", "c-tag:>", "t:Reserve", "c-tag:</button>"],
   ["c-tag:</div>"],
 ];
@@ -286,7 +286,7 @@ function Playground() {
             ))}
           </pre>
           <p className="hz-editor-foot">
-            <span className="hz-live" /> Live — renders as you type
+            <span className="hz-live" /> Live: renders as you type
           </p>
         </div>
         <div className="hz-preview">
@@ -302,7 +302,7 @@ function Playground() {
               <div className="card-img" />
               <div className="card-body">
                 <h4>Northern lights</h4>
-                <p>Tonight, 11pm — clear skies.</p>
+                <p>Tonight, 11pm, clear skies.</p>
                 <span className="card-btn">Reserve</span>
               </div>
             </article>
@@ -381,7 +381,7 @@ function Landing() {
           <i />
           <i />
           <i />
-          <span>preview — built only with haze</span>
+          <span>preview: built only with haze</span>
         </div>
         <div className="hz-demo">
           <div className="hz-part hz-part-nav" data-cls="haze-nav-2">

@@ -36,7 +36,7 @@ export default function Studio() {
     document.documentElement.style.setProperty("--bg", "#050505");
     document.documentElement.style.setProperty("--fg", "#f2f2f0");
     document.documentElement.style.setProperty("--accent", "#ff3b30");
-    document.title = "Studio — High on Java";
+    document.title = "Studio | High on Java";
     const robots = document.createElement("meta");
     robots.name = "robots";
     robots.content = "noindex, nofollow";
@@ -76,7 +76,7 @@ export default function Studio() {
     );
   }
 
-  if (!ready) return <main className="studio studio-gate">Checking session…</main>;
+  if (!ready) return <main className="studio studio-gate">Checking session</main>;
 
   const email = session?.user.email?.toLowerCase();
   const isOwner = Boolean(email && (!ownerEmail || email === ownerEmail));
@@ -121,7 +121,7 @@ export default function Studio() {
       </header>
 
       {!content ? (
-        <p className="studio-loading">Loading content…</p>
+        <p className="studio-loading">Loading content</p>
       ) : (
         <div className="studio-body">
           {tab === "projects" && <ProjectsPanel content={content} reload={reload} />}
@@ -169,7 +169,7 @@ function SignIn({ onError, error }: { onError: (e: string | null) => void; error
           />
         </label>
         <button className="btn" disabled={busy}>
-          {busy ? "…" : "Enter"}
+          {busy ? "Wait" : "Enter"}
         </button>
         {error && <p className="studio-error">{error}</p>}
         <p className="field-hint">

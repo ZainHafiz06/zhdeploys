@@ -1,6 +1,8 @@
 import { createTimeline, onScroll, stagger, type Timeline } from "animejs";
 import type { Layout, Pose } from "./geometry";
-import { BLURBS, END, OUTRO, SWAP } from "./story";
+import { BLURBS, END, LATE_SHIFT, MUN_SHIFT, OUTRO, RESEARCH_START, SWAP, TOUR } from "./story";
+import { STACK_BOX, TOUR as TOUR_PAGES, pageTop, tuck, type Box } from "../research/tour";
+import { MUN_PICKS } from "./apps/munCatalog";
 import { MUN_ANSWER, MUN_QUERY } from "./apps/MunApp";
 import { VQ_OPEN } from "./apps/VaqfaApp";
 import type { LaptopCtrl } from "./Devices";
@@ -20,8 +22,6 @@ type Scrub = { t0: number; t1: number; fn: (p: number) => void; last: number };
 
 export interface Built {
   tl: Timeline;
-  /** Current beat, for the index and the sky. */
-  onBeat: (cb: (beat: number) => void) => void;
 }
 
 const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
@@ -57,8 +57,6 @@ export function buildTimeline(root: HTMLElement, track: HTMLElement, L: Layout, 
   const $$ = (sel: string) => root.querySelectorAll(sel);
 
   const scrubs: Scrub[] = [];
-  const beatListeners: ((b: number) => void)[] = [];
-  let lastBeat = -1;
 
   const runScrubs = (time: number) => {
     const beat = time / U;
@@ -68,10 +66,6 @@ export function buildTimeline(root: HTMLElement, track: HTMLElement, L: Layout, 
         s.last = p;
         s.fn(p);
       }
-    }
-    if (beat !== lastBeat) {
-      lastBeat = beat;
-      beatListeners.forEach((cb) => cb(beat));
     }
   };
 
@@ -88,11 +82,14 @@ export function buildTimeline(root: HTMLElement, track: HTMLElement, L: Layout, 
 
   /* ── primitives ─────────────────────────────────────────────────────── */
 
+  // Sections after MŪN are authored at their original beats and shifted by
+  // `off` when the research chapter is inserted before them.
+  let off = 0;
   const add = (targets: Targets, t0: number, t1: number, params: Params, e: string = "inOutQuad") => {
     if (!targets || (targets as NodeListOf<Element>).length === 0) return;
-    tl.add(targets as never, { ...params, duration: Math.max(1, (t1 - t0) * U), ease: e }, t0 * U);
+    tl.add(targets as never, { ...params, duration: Math.max(1, (t1 - t0) * U), ease: e }, (t0 + off) * U);
   };
-  const scrub = (t0: number, t1: number, fn: (p: number) => void) => scrubs.push({ t0, t1, fn, last: -1 });
+  const scrub = (t0: number, t1: number, fn: (p: number) => void) => scrubs.push({ t0: t0 + off, t1: t1 + off, fn, last: -1 });
 
   /** Cross-fade with a touch of haze: the outgoing view blurs away, the incoming one clears. */
   const swapViews = (out: Targets, into: Targets, t: number, d = 0.14) => {
@@ -154,7 +151,6 @@ export function buildTimeline(root: HTMLElement, track: HTMLElement, L: Layout, 
   add(".t-high", 0.02, 1.0, { translateY: [0, lift] }, "inQuad");
   add(".t-on", 0.05, 1.03, { translateY: [0, lift] }, "inQuad");
   add(".t-java", 0.08, 1.08, { translateY: [0, lift * 1.1] }, "inQuad");
-  fade(".scroll-cue", 0, 0.1, 1, 0);
 
   // The 3D laptop turns from the mockup's angle to face you square-on.
   add(lap, 0.2, 1.3, { p: [0, 1] }, "inOutCubic");
@@ -294,33 +290,49 @@ export function buildTimeline(root: HTMLElement, track: HTMLElement, L: Layout, 
   ptr.click(7.08);
   swapViews(".mn-intro", ".mn-library", 7.1, 0.15);
 
-  add(".mn-banner-row.r0", 7.1, 8.6, { translateX: [0, -150] }, "linear");
-  add(".mn-banner-row.r1", 7.1, 8.6, { translateX: [-120, 30] }, "linear");
-  add(".mn-banner-row.r2", 7.1, 8.6, { translateX: [0, -150] }, "linear");
+  add(".mn-banner-row.r0", 7.1, 9.6, { translateX: [0, -220] }, "linear");
+  add(".mn-banner-row.r1", 7.1, 9.6, { translateX: [-140, 60] }, "linear");
+  add(".mn-banner-row.r2", 7.1, 9.6, { translateX: [0, -220] }, "linear");
 
-  const grid = mn.querySelector<HTMLElement>(".mn-swap")!;
-  const libShift = -(offsetIn(grid, mn.querySelector<HTMLElement>(".mn-lib-content")!).y - 40);
-  add(".mn-lib-content", 7.38, 7.8, { translateY: [0, libShift] }, "inOutCubic");
-  ptr.move(7.4, 7.8, [760, 500], "inOutSine");
-  ptr.move(7.84, 7.96, mnPt(".mn-vendor-anthropic", 0.45, 0.5, libShift));
-  ptr.click(7.98);
-  add(".mn-grid", 8.0, 8.1, { opacity: [1, 0], translateY: [0, -8] });
-  add(".mn-detail", 8.04, 8.16, { opacity: [0, 1], translateY: [10, 0] }, "outCubic");
+  // Scroll the whole library: every lab in MŪN's catalog, top to bottom.
+  const libContent = mn.querySelector<HTMLElement>(".mn-lib-content")!;
+  const libView = mn.querySelector<HTMLElement>(".mn-lib-scroll")!.offsetHeight;
+  const gridEl = mn.querySelector<HTMLElement>(".mn-grid")!;
+  const gridBottom = offsetIn(gridEl, libContent).y + gridEl.offsetHeight;
+  const libEnd = -(gridBottom - libView + 40);
+  add(".mn-lib-content", 7.38, 8.4, { translateY: [0, libEnd] }, "inOutSine");
+  ptr.move(7.4, 8.4, [760, 520], "inOutSine");
+
+  // Back up to Anthropic and open it.
+  const anthY = offsetIn(mn.querySelector<HTMLElement>(".mn-vendor-anthropic")!, libContent).y;
+  const anthShift = -(anthY - 150);
+  add(".mn-lib-content", 8.44, 8.7, { translateY: [libEnd, anthShift] }, "inOutCubic");
+  ptr.move(8.72, 8.84, mnPt(".mn-vendor-anthropic", 0.45, 0.5, anthShift));
+  ptr.click(8.86);
+  add(".mn-grid", 8.88, 8.98, { opacity: [1, 0], translateY: [0, -8] });
+  add(".mn-detail", 8.92, 9.04, { opacity: [0, 1], translateY: [10, 0] }, "outCubic");
+
+  // Every Anthropic model scrolls past, landing on the two the demo switches on.
+  const rowY = (i: number) => offsetIn(mn.querySelector<HTMLElement>(`.mn-row-${i}`)!, libContent).y;
+  const modelShift = -(rowY(MUN_PICKS[0]) - 120);
+  add(".mn-lib-content", 9.06, 9.32, { translateY: [anthShift, modelShift] }, "inOutSine");
 
   const count = $(".mn-active-n");
   const toggleOn = (i: number, t: number) => {
     const row = `.mn-row-${i}`;
-    ptr.move(t - 0.1, t - 0.02, mnPt(`${row} .mn-toggle`, 0.5, 0.55, libShift));
+    ptr.move(t - 0.1, t - 0.02, mnPt(`${row} .mn-toggle`, 0.5, 0.55, modelShift));
     ptr.click(t);
     add(`${row} .mn-toggle`, t + 0.01, t + 0.07, { backgroundColor: ["#191919", "#ffffff"] });
     add(`${row} .mn-toggle i`, t + 0.01, t + 0.07, { translateX: [0, 16], backgroundColor: ["#4d4d4d", "#000000"] }, "outBack(1.4)");
     add(`${row} .mn-row-dot`, t + 0.01, t + 0.07, { backgroundColor: ["#4d4d4d", "#e8855a"] });
     add(row, t + 0.01, t + 0.1, { borderColor: ["rgba(255,255,255,0.1)", "rgba(255,255,255,0.22)"] });
   };
-  toggleOn(0, 8.26);
-  toggleOn(1, 8.44);
-  scrub(8.26, 8.46, (p) => setText(count, p < 0.1 ? "3" : p < 0.95 ? "4" : "5"));
+  toggleOn(MUN_PICKS[0], 9.44);
+  toggleOn(MUN_PICKS[1], 9.54);
+  scrub(9.44, 9.56, (p) => setText(count, p < 0.1 ? "3" : p < 0.95 ? "4" : "5"));
 
+  // The rest of MŪN was authored before the catalog scroll existed.
+  off = MUN_SHIFT;
   ptr.move(8.58, 8.7, mnPt(".mn-back", 0.4, 0.55));
   ptr.click(8.72);
   swapViews(".mn-library", ".mn-intro", 8.74, 0.15);
@@ -339,7 +351,7 @@ export function buildTimeline(root: HTMLElement, track: HTMLElement, L: Layout, 
   swapViews(".mn-intro", ".mn-chat", 9.66, 0.12);
   ptr.move(9.7, 9.9, [1180, 740], "inOutSine");
 
-  tl.add($$(".mn-live-chip") as never, { opacity: [0, 1], scale: [0.85, 1], duration: 0.05 * U, ease: "outBack(2)", delay: stagger(0.045 * U) }, 9.8 * U);
+  tl.add($$(".mn-live-chip") as never, { opacity: [0, 1], scale: [0.85, 1], duration: 0.05 * U, ease: "outBack(2)", delay: stagger(0.045 * U) }, (9.8 + off) * U);
   const stream = $(".mn-stream");
   fade(".mn-stream-caret", 9.98, 10.0, 0, 1);
   scrub(10.0, 10.26, (p) => {
@@ -352,7 +364,73 @@ export function buildTimeline(root: HTMLElement, track: HTMLElement, L: Layout, 
   });
   fade(".mn-stream-caret", 10.26, 10.28, 1, 0);
   add(".mn-meta", 10.27, 10.33, { opacity: [0, 1], translateY: [6, 0] }, "outCubic");
-  tl.add($$(".mn-model-card") as never, { opacity: [0, 1], translateY: [6, 0], duration: 0.05 * U, ease: "outCubic", delay: stagger(0.02 * U) }, 10.3 * U);
+  tl.add($$(".mn-model-card") as never, { opacity: [0, 1], translateY: [6, 0], duration: 0.05 * U, ease: "outCubic", delay: stagger(0.02 * U) }, (10.3 + off) * U);
+
+  /* ── RESEARCH ───────────────────────────────────────────────────────── */
+
+  off = 0; // the research chapter is authored in final beats
+  const R = RESEARCH_START;
+  fade(".mn", R, R + 0.14, 1, 0);
+  add(".rs", R + 0.06, R + 0.22, { opacity: [0, 1], filter: ["blur(8px)", "blur(0px)"] }, "outCubic");
+  ptr.move(R + 0.02, R + 0.22, [1120, 640], "inOutSine");
+  add(".rs .p-hero h1", R + 0.1, R + 0.35, { opacity: [0, 1], translateY: [24, 0] }, "outCubic");
+  add(".rs .p-dek", R + 0.2, R + 0.4, { opacity: [0, 1], translateY: [16, 0] }, "outCubic");
+  add(".rs .p-cta", R + 0.28, R + 0.44, { opacity: [0, 1], translateY: [12, 0] }, "outCubic");
+
+  // The laptop steps aside and the paper takes the frame.
+  add(lap, TOUR.start, TOUR.start + 0.45, { s: [0, 1] }, "inOutCubic");
+  fade(".pointer", TOUR.start, TOUR.start + 0.12, 1, 0);
+  add(".tour", TOUR.start + 0.12, TOUR.start + 0.45, { opacity: [0, 1], translateX: [90, 0] }, "outCubic");
+
+  // The rest of the paper slides in behind page 1, one sheet after another.
+  const later = TOUR_PAGES.slice(1);
+  later.forEach((pg, j) => {
+    const i = j + 1;
+    const k = tuck(i);
+    const t0 = TOUR.stackAt + j * 0.1;
+    add(`.tour-page[data-page="${pg.n}"]`, t0, t0 + 0.2, { translateX: [k.x + 70, k.x], translateY: [k.y, k.y], rotate: [k.r, k.r], opacity: [0, 1] }, "outCubic");
+  });
+
+  // A camera over the paper: the stack, then each passage framed and highlighted.
+  const f = L.tour;
+  const frameOn = ([x0, y0, x1, y1]: Box, fill = 0.76) => {
+    const k = Math.min((f.w * fill) / (x1 - x0), (f.h * (fill - 0.12)) / (y1 - y0), 4.2);
+    return { tx: f.w / 2 - k * (x0 + x1) / 2, ty: f.h / 2 - k * (y0 + y1) / 2, k };
+  };
+  const camEl = $(".tour-cam");
+  let cam = frameOn(STACK_BOX, 0.78);
+  camEl.style.transform = `translate(${cam.tx}px, ${cam.ty}px) scale(${cam.k})`;
+  const camTo = (t0: number, t1: number, to: typeof cam) => {
+    add(camEl, t0, t1, { translateX: [cam.tx, to.tx], translateY: [cam.ty, to.ty], scale: [cam.k, to.k] }, "inOutCubic");
+    cam = to;
+  };
+
+  // While the camera dives in, the stack opens into a column so it can keep panning, never zooming out.
+  const first = TOUR.steps[0];
+  later.forEach((pg, j) => {
+    const k = tuck(j + 1);
+    add(`.tour-page[data-page="${pg.n}"]`, first.moveAt + 0.02, first.holdAt, { translateX: [k.x, 0], translateY: [k.y, pageTop(pg.n)], rotate: [k.r, 0] }, "inOutCubic");
+  });
+
+  for (const step of TOUR.steps) {
+    const [x0, y0, x1, y1] = step.region;
+    const top = pageTop(step.page);
+    camTo(step.moveAt, step.holdAt, frameOn([x0, y0 + top, x1, y1 + top]));
+    const n = step.lines.length;
+    const [pg, si] = step.id.replace("tour-", "").split("-");
+    $$(`.tour-hl-${pg}-${si}`).forEach((line, li) => {
+      const t0 = step.holdAt + (li * 0.16) / Math.max(1, n);
+      add(line, t0, t0 + 0.16 / Math.max(1, n) + 0.02, { scaleX: [0, 1] }, "inOutSine");
+    });
+  }
+
+  // The paper steps back and the laptop returns.
+  add(".tour", TOUR.exitAt, TOUR.exitAt + 0.3, { opacity: [1, 0], translateX: [0, -70] }, "inCubic");
+  add(lap, TOUR.exitAt + 0.05, TOUR.end, { s: [1, 0] }, "inOutCubic");
+  fade(".pointer", TOUR.end - 0.1, TOUR.end, 0, 1);
+
+  // Everything after this point was authored before MŪN's catalog and the research chapter existed.
+  off = LATE_SHIFT;
 
   /* ── VAQFA ──────────────────────────────────────────────────────────── */
 
@@ -362,7 +440,7 @@ export function buildTimeline(root: HTMLElement, track: HTMLElement, L: Layout, 
     return [(r.x + r.w * ax) * MK, (r.y + r.h * ay + dy) * MK];
   };
 
-  fade(".mn", 10.42, 10.56, 1, 0);
+  fade(".rs", 10.42, 10.56, 1, 0);
   add(".vq", 10.46, 10.62, { opacity: [0, 1], filter: ["blur(8px)", "blur(0px)"] }, "outCubic");
   // The Classic template has its own cursor: a soft grey dot.
   fade(".pointer-arrow", 10.45, 10.52, 1, 0);
@@ -404,11 +482,13 @@ export function buildTimeline(root: HTMLElement, track: HTMLElement, L: Layout, 
   ptr.move(13.1, 13.5, [1100, 700], "inOutSine");
   fade(".pointer", 13.9, 14.0, 1, 0);
 
+  off = 0; // SWAP is already in final beats
   /* ── laptop out, phone in ───────────────────────────────────────────── */
 
   add(lap, SWAP[0], SWAP[0] + 0.62, { q: [0, 1] }, "inCubic");
   pose(phone, SWAP[0] + 0.22, SWAP[1], L.phone.below, L.phone.in, "outCubic");
 
+  off = LATE_SHIFT;
   /* ── NITE ───────────────────────────────────────────────────────────── */
 
   const nt = $(".nt");
@@ -509,24 +589,42 @@ export function buildTimeline(root: HTMLElement, track: HTMLElement, L: Layout, 
   add(".nt-sem-fill", 19.84, 20.2, { width: ["0%", "60%"] }, "inOutCubic");
   const pct = $(".nt-sem-pct");
   scrub(19.84, 20.2, (p) => setText(pct, String(Math.round(ease(p) * 60))));
-  tl.add($$(".nt-up-row") as never, { opacity: [0, 1], translateX: [12, 0], duration: 0.08 * U, ease: "outCubic", delay: stagger(0.05 * U) }, 19.9 * U);
+  tl.add($$(".nt-up-row") as never, { opacity: [0, 1], translateX: [12, 0], duration: 0.08 * U, ease: "outCubic", delay: stagger(0.05 * U) }, (19.9 + off) * U);
   fade(".touch", 20.0, 20.1, 1, 0);
 
+  off = 0; // OUTRO and the blurbs are already in final beats
   /* ── outro ──────────────────────────────────────────────────────────── */
 
   pose(phone, OUTRO[0], OUTRO[0] + 0.55, L.phone.in, L.phone.gone, "inCubic");
   fade(".scrim", OUTRO[0], OUTRO[0] + 0.3, 1, 0);
   tl.add($$(".outro-line") as never, { opacity: [0, 1], translateY: [60, 0], duration: 0.35 * U, ease: "outCubic", delay: stagger(0.08 * U) }, (OUTRO[0] + 0.3) * U);
   add(".outro-foot", OUTRO[0] + 0.55, OUTRO[0] + 0.8, { opacity: [0, 1], translateY: [16, 0] }, "outCubic");
+  add(".outro-up", OUTRO[0] + 0.6, OUTRO[0] + 0.85, { opacity: [0, 1], translateY: [12, 0] }, "outCubic");
 
   /* ── blurbs ─────────────────────────────────────────────────────────── */
 
-  for (const b of BLURBS) {
+  // Each app's header (logo + name) holds from its first blurb to its last.
+  for (const app of new Set(BLURBS.map((b) => b.app))) {
+    const mine = BLURBS.filter((b) => b.app === app);
+    const first = Math.min(...mine.map((b) => b.at[0]));
+    const last = Math.max(...mine.map((b) => b.at[1]));
+    const sel = `.blurb-app[data-app="${app}"]`;
+    add(sel, first - 0.24, first, { opacity: [0, 1], translateY: [10, 0] }, "outCubic");
+    add(sel, last, last + 0.24, { opacity: [1, 0], translateY: [0, -10] }, "inCubic");
+  }
+
+  // Within an app, one blurb's text clears before the next arrives: each fade
+  // takes at most half the gap to its neighbour, so they never overlap.
+  BLURBS.forEach((b, i) => {
     const sel = `.blurb[data-id="${b.id}"]`;
     const [a, z] = b.at;
-    add(sel, a - 0.24, a, { opacity: [0, 1], translateY: [22, 0], filter: ["blur(6px)", "blur(0px)"] }, "outCubic");
-    add(sel, z, z + 0.24, { opacity: [1, 0], translateY: [0, -22], filter: ["blur(0px)", "blur(6px)"] }, "inCubic");
-  }
+    const prev = BLURBS[i - 1]?.app === b.app ? BLURBS[i - 1] : null;
+    const next = BLURBS[i + 1]?.app === b.app ? BLURBS[i + 1] : null;
+    const fin = prev ? Math.min(0.24, (a - prev.at[1]) / 2 - 0.01) : 0.24;
+    const fout = next ? Math.min(0.24, (next.at[0] - z) / 2 - 0.01) : 0.24;
+    add(sel, a - fin, a, { opacity: [0, 1], translateY: [18, 0], filter: ["blur(6px)", "blur(0px)"] }, "outCubic");
+    add(sel, z, z + fout, { opacity: [1, 0], translateY: [0, -18], filter: ["blur(0px)", "blur(6px)"] }, "inCubic");
+  });
 
   // Pad to the end so the final state holds.
   tl.add({ duration: 1 } as never, END * U - 1);
@@ -543,11 +641,5 @@ export function buildTimeline(root: HTMLElement, track: HTMLElement, L: Layout, 
     sync: true,
   }).link(tl);
 
-  return {
-    tl,
-    onBeat: (cb) => {
-      beatListeners.push(cb);
-      cb(tl.currentTime / U);
-    },
-  };
+  return { tl };
 }

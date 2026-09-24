@@ -6,6 +6,7 @@ import { Cursor } from "./components/Cursor";
 
 const WorkPage = lazy(() => import("./pages/WorkPage"));
 const ResearchPage = lazy(() => import("./pages/ResearchPage"));
+const PaperPage = lazy(() => import("./research/PaperPage"));
 const Studio = lazy(() => import("./studio/Studio"));
 
 export default function App() {
@@ -13,10 +14,12 @@ export default function App() {
     <BrowserRouter>
       <SmoothScroll>
         <Cursor />
-        <Suspense fallback={<div className="route-fallback" aria-live="polite">Loading…</div>}>
+        <Suspense fallback={<div className="route-fallback" aria-live="polite">Loading</div>}>
           <Routes>
             <Route path="/" element={<Stage />} />
             <Route path="/work/:slug" element={<WorkPage />} />
+            <Route path="/research/beyond-best-single" element={<PaperPage />} />
+            <Route path="/research/routing" element={<Navigate to="/research/beyond-best-single" replace />} />
             <Route path="/research/:slug" element={<ResearchPage />} />
             <Route path="/studio/*" element={<Studio />} />
             <Route path="/admin" element={<Navigate to="/studio" replace />} />

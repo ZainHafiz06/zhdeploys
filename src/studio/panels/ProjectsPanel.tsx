@@ -38,7 +38,7 @@ export function ProjectsPanel({ content, reload }: { content: SiteContent; reloa
   };
 
   const remove = async (project: Project) => {
-    if (!confirm(`Delete “${project.title}” permanently? This cannot be undone.`)) return;
+    if (!confirm(`Delete "${project.title}" permanently? This cannot be undone.`)) return;
     const { error } = await supabase!.from("projects").delete().eq("id", project.id);
     setStatus(error ? error.message : `Deleted ${project.title}`);
     await reload();
@@ -206,7 +206,7 @@ function ProjectEditor({
         <MediaPicker label="Hero media" value={draft.heroMedia} onChange={(m) => set("heroMedia", m)} />
         <MediaPicker label="Video" value={draft.video} onChange={(m) => set("video", m)} kind="video" />
 
-        <Field label="Palette" hint="Background, foreground, accent — the world colours this chapter hands the site.">
+        <Field label="Palette" hint="Background, foreground and accent: the world colours this chapter hands the site.">
           <div className="palette-row">
             {(["background", "foreground", "accent"] as const).map((key) => (
               <span className="palette-swatch" key={key}>

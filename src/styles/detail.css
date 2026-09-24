@@ -60,7 +60,7 @@
 }
 
 .detail-list li::before {
-  content: "— ";
+  content: "· ";
   color: var(--fg-faint);
 }
 

@@ -4,7 +4,9 @@ import { Sky } from "./Sky";
 import { Laptop, Phone, type LaptopCtrl } from "./Devices";
 import { SocialIcon } from "./SocialIcon";
 import { computeLayout, type Layout } from "./geometry";
-import { BLURBS, CHAPTERS, END, INTRO_END, type AppId } from "./story";
+import { BLURBS, CHAPTERS, END, INTRO_END, OUTRO, RESEARCH_START, type AppId } from "./story";
+import { PaperTour } from "./PaperTour";
+import { Link } from "react-router-dom";
 import { buildTimeline } from "./timeline";
 import { useSiteContent } from "../content/store";
 import { useReducedMotion } from "../motion/useReducedMotion";
@@ -14,6 +16,7 @@ import "./apps/haze.css";
 import "./apps/mun.css";
 import "./apps/vaqfa.css";
 import "./apps/nite.css";
+import "./apps/research-app.css";
 
 const APP_OF: Record<AppId, (typeof CHAPTERS)[number]> = Object.fromEntries(CHAPTERS.map((c) => [c.app, c])) as never;
 
@@ -53,12 +56,12 @@ export default function Stage() {
   const track = useRef<HTMLDivElement>(null);
   const drift = useRef(0);
   // Written by the scroll timeline, read by the laptop's render loop.
-  const laptopCtrl = useRef<LaptopCtrl>({ p: 0, q: 0 });
+  const laptopCtrl = useRef<LaptopCtrl>({ p: 0, q: 0, s: 0 });
   const [beat, setBeat] = useState(0);
   const [fontsReady, setFontsReady] = useState(false);
 
   useEffect(() => {
-    document.title = content.settings.seoTitle || "Zain Hafiz — High on Java";
+    document.title = content.settings.seoTitle || "Zain Hafiz | High on Java";
     let alive = true;
     document.fonts.ready.then(() => alive && setFontsReady(true));
     return () => {
@@ -71,20 +74,36 @@ export default function Stage() {
   useLayoutEffect(() => {
     if (!fontsReady || !root.current || !track.current) return;
     const built = buildTimeline(root.current, track.current, layout, laptopCtrl.current);
-    if (import.meta.env.DEV) Object.assign(window, { __hoj: { tl: built.tl, lap: laptopCtrl.current } });
-    let lastIndex = -1;
-    built.onBeat((b) => {
-      drift.current = b * 0.32;
-      const i = Math.floor(b * 20);
-      if (i !== lastIndex) {
-        lastIndex = i;
-        setBeat(b);
-      }
-    });
     return () => {
       built.tl.revert();
     };
   }, [fontsReady, layout]);
+
+  // The page's own sense of "where are we" comes straight from the scroll
+  // position (the timeline's update callback doesn't fire when it lands
+  // exactly on its first frame). It drives the index, the blurb links and the sky.
+  useEffect(() => {
+    let last = -1;
+    const read = () => {
+      const el = track.current;
+      if (!el) return;
+      const max = Math.max(1, el.offsetHeight - window.innerHeight);
+      const b = (Math.min(max, Math.max(0, window.scrollY - el.offsetTop)) / max) * END;
+      drift.current = b * 0.32;
+      const q = Math.round(b * 20);
+      if (q !== last) {
+        last = q;
+        setBeat(b);
+      }
+    };
+    read();
+    window.addEventListener("scroll", read, { passive: true });
+    window.addEventListener("resize", read);
+    return () => {
+      window.removeEventListener("scroll", read);
+      window.removeEventListener("resize", read);
+    };
+  }, [layout]);
 
   // Arrival (time-based, separate from scroll): the title rises, the laptop settles.
   useEffect(() => {
@@ -110,8 +129,10 @@ export default function Stage() {
   }, [fontsReady, reduced]);
 
   const current = CHAPTERS.find((c) => beat >= c.start && beat < c.end)?.app ?? null;
-  // The project index stays hidden until "high on java" has left the frame.
-  const showIndex = beat >= INTRO_END - 0.2;
+  // The project index appears once "high on java" has left the frame, and
+  // bows out again when the closing lines arrive.
+  const showIndex = beat >= INTRO_END - 0.2 && beat < OUTRO[0] + 0.25;
+  const atEnd = beat >= OUTRO[0] + 0.55;
   const jump = (b: number) => {
     const el = track.current;
     if (!el) return;
@@ -142,6 +163,7 @@ export default function Stage() {
           </div>
 
           <Laptop layout={layout} ctrl={laptopCtrl} reduced={reduced} />
+          <PaperTour layout={layout} load={beat > RESEARCH_START - 4} />
 
           {/* Poster layers above the laptop: the "ja" shadow, "ja", "va" */}
           <div className="t-java">
@@ -163,19 +185,44 @@ export default function Stage() {
           <Phone />
 
           <div className="blurbs">
-            {BLURBS.map((b) => {
-              const chapter = APP_OF[b.app];
-              return (
-                <article className="blurb" data-id={b.id} key={b.id}>
-                  <header className="blurb-app">
-                    <img src={chapter.logo} alt="" />
-                    <span>{chapter.label}</span>
-                  </header>
-                  <h2>{b.title}</h2>
-                  <p>{b.body}</p>
-                </article>
+            {/* One header per app: it stays put while that app's blurbs change beneath it. */}
+            {CHAPTERS.map((c) => {
+              const mine = BLURBS.filter((b) => b.app === c.app);
+              const live = mine.length > 0 && beat >= mine[0].at[0] - 0.15 && beat <= mine[mine.length - 1].at[1] + 0.15;
+              const inner = (
+                <>
+                  <img src={c.logo} alt="" />
+                  <span>{c.label}</span>
+                </>
+              );
+              const cls = `blurb-app ${live ? "is-live" : ""}`;
+              return c.placeholder ? (
+                // PLACEHOLDER: no live site yet. Set `href` in story.ts to link it.
+                <a className={cls} data-app={c.app} key={c.app} href={c.href} title={`${c.label}: link coming soon`} tabIndex={live ? 0 : -1} onClick={(e) => e.preventDefault()}>
+                  {inner}
+                </a>
+              ) : (
+                <Link className={cls} data-app={c.app} key={c.app} to={c.href} title={`Open ${c.label}`} tabIndex={live ? 0 : -1}>
+                  {inner}
+                </Link>
               );
             })}
+            {BLURBS.map((b) => (
+              <article className={`blurb ${beat >= b.at[0] - 0.12 && beat <= b.at[1] + 0.12 ? "is-live" : ""}`} data-id={b.id} key={b.id}>
+                <h2>{b.title}</h2>
+                <p>{b.body}</p>
+                {b.link &&
+                  (b.link.href.endsWith(".pdf") ? (
+                    <a className="blurb-link" href={b.link.href} target="_blank" rel="noreferrer">
+                      {b.link.label}
+                    </a>
+                  ) : (
+                    <Link className="blurb-link" to={b.link.href}>
+                      {b.link.label}
+                    </Link>
+                  ))}
+              </article>
+            ))}
           </div>
 
           <div className="outro">
@@ -200,15 +247,21 @@ export default function Stage() {
                   </a>
                 ))}
             </nav>
-            <button type="button" className="outro-top" onClick={() => jump(0)}>
-              back to the top ↑
-            </button>
           </footer>
 
-          <button type="button" className="scroll-cue" onClick={() => jump(CHAPTERS[0].start + 0.4)}>
-            <span>scroll</span>
-            <i />
+          <button
+            type="button"
+            className={`outro-up ${atEnd ? "is-live" : ""}`}
+            onClick={() => jump(0)}
+            aria-label="Back to the top"
+            title="Back to the top"
+            tabIndex={atEnd ? 0 : -1}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 19V5M5.5 11.5 12 5l6.5 6.5" />
+            </svg>
           </button>
+
         </div>
       </div>
 

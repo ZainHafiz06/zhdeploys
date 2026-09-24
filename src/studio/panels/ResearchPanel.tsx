@@ -38,7 +38,7 @@ export function ResearchPanel({ content, reload }: { content: SiteContent; reloa
   };
 
   const remove = async (entry: Research) => {
-    if (!confirm(`Delete “${entry.title}” permanently?`)) return;
+    if (!confirm(`Delete "${entry.title}" permanently?`)) return;
     const { error } = await supabase!.from("research").delete().eq("id", entry.id);
     setStatus(error ? error.message : `Deleted ${entry.title}`);
     await reload();
@@ -74,7 +74,7 @@ export function ResearchPanel({ content, reload }: { content: SiteContent; reloa
               value={draft.relatedProjectId ?? ""}
               onChange={(e) => set("relatedProjectId", e.target.value || undefined)}
             >
-              <option value="">— none —</option>
+              <option value="">None</option>
               {content.projects.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.title}

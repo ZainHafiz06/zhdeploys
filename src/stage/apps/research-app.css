@@ -1,0 +1,31 @@
+/* ── The paper on the laptop (1280 × 828 virtual) ────────────────────────
+   Sizes here replace the page's viewport-relative clamps, which would read
+   the real browser width rather than the laptop screen's.
+   ─────────────────────────────────────────────────────────────────────── */
+
+.screen .rs {
+  opacity: 0;
+}
+.rs-page {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.rs .p-nav {
+  position: relative;
+  padding: 18px 48px;
+}
+.rs .p-hero {
+  padding: 120px 48px 0;
+}
+.rs .p-hero h1 {
+  font-size: 76px;
+}
+.rs .p-dek {
+  font-size: 19px;
+}
+.rs .p-byline {
+  max-width: 820px;
+  margin-top: 90px;
+}

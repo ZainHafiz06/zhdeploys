@@ -6,6 +6,7 @@ import { fitPose, mixPose, screenQuad, straightPose, type RigPose } from "./lapt
 import { Mug } from "./Mug";
 import { HazeApp } from "./apps/HazeApp";
 import { MunApp } from "./apps/MunApp";
+import { ResearchApp } from "./apps/ResearchApp";
 import { VaqfaApp } from "./apps/VaqfaApp";
 import { NiteApp } from "./apps/NiteApp";
 
@@ -14,6 +15,8 @@ import { NiteApp } from "./apps/NiteApp";
 export interface LaptopCtrl {
   p: number;
   q: number;
+  /** 0 → 1: slid off to the side while the paper tour plays. */
+  s: number;
 }
 
 const APP_FOV = 22;
@@ -68,14 +71,15 @@ export function Laptop({ layout, ctrl, reduced }: { layout: Layout; ctrl: React.
     // Pixels → world units at the straight-on depth, for the exit.
     const f = layout.vh / 2 / Math.tan(THREE.MathUtils.degToRad(APP_FOV) / 2);
     const exitWorld = (layout.laptop.exit * -app.t.z) / f;
-    return { view, intro, app, exitWorld };
+    const asideWorld = (layout.laptop.aside * -app.t.z) / f;
+    return { view, intro, app, exitWorld, asideWorld };
   }, [layout]);
 
   useEffect(() => {
     const canvas = canvasRef.current!;
     const screen = screenRef.current!;
     const rig = rigRef.current!;
-    const { view, intro, app, exitWorld } = poses;
+    const { view, intro, app, exitWorld, asideWorld } = poses;
 
     let renderer: THREE.WebGLRenderer | null = null;
     try {
@@ -139,7 +143,7 @@ export function Laptop({ layout, ctrl, reduced }: { layout: Layout; ctrl: React.
 
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
-      const { p, q } = ctrl.current;
+      const { p, q, s } = ctrl.current;
       const time = (now - start) / 1000;
 
       mixPose(intro, app, p, pose);
@@ -151,12 +155,14 @@ export function Laptop({ layout, ctrl, reduced }: { layout: Layout; ctrl: React.
         pose.q.multiply(bob.setFromEuler(euler));
       }
       pose.t.y += q * exitWorld;
+      // Translation only, so the screen stays perfectly square as it slides.
+      pose.t.x += s * asideWorld;
 
-      const key = `${p.toFixed(5)}|${q.toFixed(5)}|${reduced ? 0 : Math.round(time * 60)}|${loaded}`;
+      const key = `${p.toFixed(5)}|${q.toFixed(5)}|${s.toFixed(5)}|${reduced ? 0 : Math.round(time * 60)}|${loaded}`;
       if (key === lastKey) return;
       lastKey = key;
 
-      const hidden = q >= 1;
+      const hidden = q >= 1 || s >= 1;
       rig.style.visibility = hidden ? "hidden" : "";
       if (hidden) return;
 
@@ -186,6 +192,7 @@ export function Laptop({ layout, ctrl, reduced }: { layout: Layout; ctrl: React.
       <div className="screen" ref={screenRef} style={{ width: SCREEN.w, height: SCREEN.h }}>
         <HazeApp />
         <MunApp />
+        <ResearchApp />
         <VaqfaApp />
         <Mug />
         <div className="screen-glare" />

@@ -233,6 +233,56 @@ html:has(.hoj)::-webkit-scrollbar {
   opacity: 0;
 }
 
+/* ── the paper tour ── */
+
+.tour {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+/* Nothing behind the paper: the frame only clips, and feathers its edges into the sky. */
+.tour-frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  --feather: linear-gradient(to right, transparent, #000 13%, #000 87%, transparent);
+  -webkit-mask-image: var(--feather), linear-gradient(to bottom, transparent, #000 13%, #000 87%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: var(--feather), linear-gradient(to bottom, transparent, #000 13%, #000 87%, transparent);
+  mask-composite: intersect;
+}
+.tour-cam {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+}
+.tour-page {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 9px;
+  background: #fff;
+  box-shadow:
+    0 1px 2px rgba(10, 20, 60, 0.12),
+    0 14px 34px -14px rgba(10, 20, 60, 0.4);
+  transform-origin: 50% 50%;
+}
+.tour-page img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+/* The highlighter: warm yellow, multiplied into the ink, swept left to right. */
+.tour-hl {
+  position: absolute;
+  background: #ffe45c;
+  mix-blend-mode: multiply;
+  border-radius: 2px;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+
 /* ── phone ── */
 
 .phone {
@@ -343,27 +393,38 @@ html:has(.hoj)::-webkit-scrollbar {
 .blurbs {
   position: absolute;
   left: max(24px, 5.5vw);
-  top: 50%;
+  top: calc(50% - 110px);
   width: var(--blurb-w);
-  translate: 0 -50%;
   pointer-events: none;
 }
-.blurb {
+.blurb-app {
   position: absolute;
   left: 0;
   top: 0;
-  width: 100%;
-  translate: 0 -50%;
-  opacity: 0;
-  text-shadow: 0 1px 18px rgba(12, 28, 80, 0.35);
-}
-.blurb-app {
   display: flex;
   align-items: center;
   gap: 10px;
   font-size: 13px;
   letter-spacing: 0.04em;
-  margin-bottom: 18px;
+  opacity: 0;
+  text-shadow: 0 1px 18px rgba(12, 28, 80, 0.35);
+}
+.blurb-app {
+  color: #fff;
+  text-decoration: none;
+}
+.blurb-app.is-live {
+  pointer-events: auto;
+  cursor: pointer;
+}
+.blurb-app.is-live:hover span {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.blurb-app:focus-visible {
+  outline: 1px solid #fff;
+  outline-offset: 6px;
+  border-radius: 10px;
 }
 .blurb-app img {
   width: 34px;
@@ -372,11 +433,34 @@ html:has(.hoj)::-webkit-scrollbar {
   object-fit: cover;
   box-shadow: 0 6px 16px rgba(10, 25, 80, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.25);
 }
+.blurb {
+  position: absolute;
+  left: 0;
+  top: 54px;
+  width: 100%;
+  opacity: 0;
+  text-shadow: 0 1px 18px rgba(12, 28, 80, 0.35);
+}
 .blurb h2 {
   font-size: clamp(22px, 2.1vw, 30px);
   font-weight: 700;
   line-height: 1.12;
   letter-spacing: -0.01em;
+}
+.blurb-link {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: 13px;
+  color: #fff;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+  padding-bottom: 2px;
+}
+.blurb.is-live .blurb-link {
+  pointer-events: auto;
+}
+.blurb-link:hover {
+  border-bottom-color: #fff;
 }
 .blurb p {
   margin-top: 12px;
@@ -392,21 +476,24 @@ html:has(.hoj)::-webkit-scrollbar {
   top: auto;
   bottom: max(28px, 7svh);
   width: auto;
-  translate: none;
+  height: 210px;
 }
-.is-narrow .blurb {
-  top: auto;
-  bottom: 0;
-  translate: none;
-  padding: 16px 18px 18px;
+/* On phones the app header doubles as the frosted panel behind the text. */
+.is-narrow .blurb-app {
+  inset: 0;
+  align-items: flex-start;
+  padding: 16px 18px;
   border-radius: 18px;
   background: rgba(24, 46, 112, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.14);
   backdrop-filter: blur(14px) saturate(1.2);
   -webkit-backdrop-filter: blur(14px) saturate(1.2);
 }
-.is-narrow .blurb-app {
-  margin-bottom: 10px;
+.is-narrow .blurb {
+  left: 18px;
+  right: 18px;
+  top: 62px;
+  width: auto;
 }
 
 /* ── outro ── */
@@ -437,9 +524,7 @@ html:has(.hoj)::-webkit-scrollbar {
   right: 0;
   bottom: max(28px, 5svh);
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 18px;
+  justify-content: center;
   opacity: 0;
 }
 .outro-links {
@@ -471,59 +556,45 @@ html:has(.hoj)::-webkit-scrollbar {
   font-size: 15px;
   font-weight: 700;
 }
-.outro-top {
-  font: inherit;
-  font-size: 12px;
-  letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.75);
-  background: none;
-  border: 0;
-  cursor: pointer;
-}
-.outro-top:hover {
+.outro-up {
+  position: absolute;
+  right: max(20px, 2.4vw);
+  bottom: max(24px, 4.5svh);
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
   color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: background 0.3s;
+}
+.outro-up.is-live {
+  pointer-events: auto;
+}
+.outro-up:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+.outro-up svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.outro-up:focus-visible {
+  outline: 1px solid #fff;
+  outline-offset: 4px;
 }
 
 /* ── chrome ── */
-
-.scroll-cue {
-  position: absolute;
-  left: max(24px, 2.4vw);
-  bottom: 28px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font: inherit;
-  font-size: 13px;
-  letter-spacing: 0.1em;
-  color: #fff;
-  background: none;
-  border: 0;
-  cursor: pointer;
-  z-index: 5;
-}
-.scroll-cue i {
-  position: relative;
-  width: 1px;
-  height: 44px;
-  background: rgba(255, 255, 255, 0.35);
-  overflow: hidden;
-}
-.scroll-cue i::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: -40%;
-  width: 1px;
-  height: 40%;
-  background: #fff;
-  animation: cue 1.8s cubic-bezier(0.7, 0, 0.3, 1) infinite;
-}
-@keyframes cue {
-  to {
-    top: 100%;
-  }
-}
 
 .topbar {
   position: fixed;
@@ -609,9 +680,8 @@ html:has(.hoj)::-webkit-scrollbar {
   outline-offset: 4px;
 }
 .topbar button:focus-visible,
-.scroll-cue:focus-visible,
 .outro-links a:focus-visible,
-.outro-top:focus-visible {
+.blurb-link:focus-visible {
   outline: 1px solid #fff;
   outline-offset: 4px;
 }
@@ -621,8 +691,8 @@ html:has(.hoj)::-webkit-scrollbar {
   font-size: 12px;
 }
 .is-narrow .app-index {
-  right: 10px;
-  top: 38%;
+  right: 8px;
+  top: 27%;
   gap: 10px;
 }
 .is-narrow .app-index button {
@@ -640,8 +710,7 @@ html:has(.hoj)::-webkit-scrollbar {
 
 @media (prefers-reduced-motion: reduce) {
   .mug-sweep,
-  .phone-float,
-  .scroll-cue i::after {
+  .phone-float {
     animation: none;
   }
 }

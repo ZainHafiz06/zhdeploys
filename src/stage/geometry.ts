@@ -106,7 +106,11 @@ export interface Layout {
     app: { cx: number; cy: number; w: number };
     /** How far up (px) the laptop travels when it leaves. */
     exit: number;
+    /** How far right (px) it slides when the paper takes the frame. */
+    aside: number;
   };
+  /** The frame the paper tour plays in. */
+  tour: { x: number; y: number; w: number; h: number };
   phone: { in: Pose; below: Pose; gone: Pose };
 }
 
@@ -129,13 +133,16 @@ export function computeLayout(vw: number, vh: number): Layout {
       }
     : { top: { x: px, y: py }, java: { x: px, y: py } };
 
-  const lx = narrow ? (vw - LAPTOP.w * u) / 2 + 70 * u : px + LAPTOP.x * u;
-  const ly = narrow ? vh * 0.55 - LAPTOP.h * u * 0.5 : py + LAPTOP.y * u;
-  const introQuad = MOCKUP_SCREEN.map(([x, y]) => [lx + x * u, ly + y * u]) as Quad;
-  const introBase = MOCKUP_BASE_FRONT.map(([x, y]) => [lx + x * u, ly + y * u]) as [Pt, Pt];
+  // On phones the laptop sits a little smaller than the type, between the lines.
+  const lu = narrow ? u * 0.78 : u;
+  const lx = narrow ? (vw - LAPTOP.w * lu) / 2 + 40 * lu : px + LAPTOP.x * u;
+  const ly = narrow ? vh * 0.52 - LAPTOP.h * lu * 0.5 : py + LAPTOP.y * u;
+  const introQuad = MOCKUP_SCREEN.map(([x, y]) => [lx + x * lu, ly + y * lu]) as Quad;
+  const introBase = MOCKUP_BASE_FRONT.map(([x, y]) => [lx + x * lu, ly + y * lu]) as [Pt, Pt];
 
   const app = narrow
-    ? { cx: vw * 0.5, cy: vh * 0.27, w: vw * 0.94 }
+    ? // leaves a gutter on the right for the project index
+      { cx: vw * 0.45, cy: vh * 0.27, w: vw * 0.84 }
     : { cx: vw * 0.61, cy: vh * 0.45, w: Math.min(vw * 0.56, vh * 0.62 * 1.545) };
 
   // Phone: height-led on wide screens, centred over the same point as the laptop screen.
@@ -152,7 +159,10 @@ export function computeLayout(vw: number, vh: number): Layout {
     narrow,
     poster: { x: px, y: py, u },
     title,
-    laptop: { introQuad, introBase, app, exit: vh * 1.6 },
+    laptop: { introQuad, introBase, app, exit: vh * 1.6, aside: vw * 0.85 },
+    tour: narrow
+      ? { x: vw * 0.04, y: vh * 0.08, w: vw * 0.82, h: vh * 0.5 }
+      : { x: vw * 0.355, y: vh * 0.07, w: vw * 0.585, h: vh * 0.86 },
     phone: {
       in: phoneIn,
       below: { ...phoneIn, y: phoneIn.y + vh * 1.2, r: 6 },

@@ -18,7 +18,7 @@ export default function ResearchPage() {
     root.style.setProperty("--fg", "#f2f2f0");
     root.style.setProperty("--accent", "#8fb8ff");
     setMeta({
-      title: `${entry.title} — Research`,
+      title: `${entry.title} | Research`,
       description: entry.oneLiner || entry.subtitle || entry.title,
       canonical: `/research/${entry.slug}`,
       noindex: !entry.published,
@@ -28,7 +28,7 @@ export default function ResearchPage() {
   if (!entry) {
     return (
       <main className="detail">
-        <p>{loading ? "Loading…" : "That entry doesn't exist."}</p>
+        <p>{loading ? "Loading" : "That entry doesn't exist."}</p>
         <Link className="meta-link" to="/">
           Back to the story
         </Link>

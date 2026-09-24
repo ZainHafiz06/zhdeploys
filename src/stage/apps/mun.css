@@ -316,6 +316,12 @@
   flex-shrink: 0;
 }
 .mn-mono img { width: 21px; height: 21px; }
+.mn-mono.mono-letter {
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+  font-size: 16px;
+}
 .mn-mono.large { width: 48px; height: 48px; }
 .mn-mono.large img { width: 27px; height: 27px; }
 .mn-mono.small { width: 22px; height: 22px; border-radius: 6px; }

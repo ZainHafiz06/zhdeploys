@@ -20,7 +20,7 @@ export default function WorkPage() {
     root.style.setProperty("--fg", project.palette.foreground);
     root.style.setProperty("--accent", project.palette.accent);
     setMeta({
-      title: `${project.title} — Zain Hafiz`,
+      title: `${project.title} | Zain Hafiz`,
       description: project.summary || project.oneLiner || `${project.title}, a chapter of High on Java.`,
       image: project.heroMedia?.url ?? project.logo?.url,
       canonical: `/work/${project.slug}`,
@@ -31,7 +31,7 @@ export default function WorkPage() {
   if (!project) {
     return (
       <main className="detail">
-        <p>{loading ? "Loading…" : "That chapter doesn't exist."}</p>
+        <p>{loading ? "Loading" : "That chapter doesn't exist."}</p>
         <Link className="meta-link" to="/">
           Back to the story
         </Link>

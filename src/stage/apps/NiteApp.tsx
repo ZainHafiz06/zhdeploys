@@ -306,7 +306,7 @@ function Verify() {
         ))}
       </div>
       <p className="nt-resend">
-        didn’t receive a code? <u>resend (53s)</u>
+        didn't receive a code? <u>resend (53s)</u>
       </p>
       <span className="nt-btn nt-btn-white nt-continue">continue</span>
     </div>
@@ -528,7 +528,7 @@ function Home() {
           {[
             ["Assignment 4", "CS 3345 · due tomorrow, 11:59pm", "due"],
             ["Calc II study group", "Thu 6:00pm · Library 3F", "group"],
-            ["Midterm — Physics", "Mon 9:00am · SCI 1.210", "exam"],
+            ["Physics midterm", "Mon 9:00am · SCI 1.210", "exam"],
           ].map(([t, s, k]) => (
             <div className="nt-up-row" key={t}>
               <i className={`nt-up-dot ${k}`} />
