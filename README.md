@@ -12,6 +12,10 @@ the laptop leaves, a phone arrives, and **Nite** plays the same way. Short
 blurbs (logo, bold header, light subheader) fade in and out on the left, and
 the clouds behind drift live.
 
+Before you scroll, the opening laptop reacts to the mouse. Hover over it and it
+turns towards the pointer, and the ASCII mug's steam rises faster and parts
+around the cursor.
+
 ## Stack
 
 | Concern | Choice |

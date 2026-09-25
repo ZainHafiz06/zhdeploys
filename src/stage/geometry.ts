@@ -78,6 +78,19 @@ export function quadMatrix(w: number, h: number, quad: Quad): string {
   return `matrix3d(${n[0]},${n[3]},0,${n[6]},${n[1]},${n[4]},0,${n[7]},0,0,1,0,${n[2]},${n[5]},0,${n[8]})`;
 }
 
+/** The inverse of quadMatrix: a viewport point back to local px on the w × h surface. */
+export function unquad(w: number, h: number, quad: Quad, x: number, y: number): Pt {
+  const src: Quad = [
+    [0, 0],
+    [w, 0],
+    [w, h],
+    [0, h],
+  ];
+  const inv = mulMM(basisToPoints(src), adj(basisToPoints(quad)));
+  const [X, Y, W] = mulMV(inv, [x, y, 1]);
+  return [X / W, Y / W];
+}
+
 /* ── layout ─────────────────────────────────────────────────────────────── */
 
 export interface Pose {

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useReducedMotion } from "../motion/useReducedMotion";
+import { screenPointer } from "./pointerState";
 
 const GLYPHS = ".:'`~(){}/\\";
 
@@ -11,6 +12,8 @@ interface Wisp {
   sway: number;
   life: number;
   glyph: number;
+  /** Sideways push from the pointer, decaying back to the natural curl. */
+  ox: number;
 }
 
 /**
@@ -39,6 +42,7 @@ export function Mug() {
       w.sway = 14 + Math.random() * 22;
       w.life = 0;
       w.glyph = Math.floor(Math.random() * GLYPHS.length);
+      w.ox = 0;
     };
     for (let i = 0; i < 46; i++) {
       const w = {} as Wisp;
@@ -54,6 +58,11 @@ export function Mug() {
       last = now;
       // Only animate while the mug is actually on screen.
       if (root.style.opacity === "0") return;
+      // Hovered: the steam rises faster, brightens, and parts around the pointer.
+      const hot = screenPointer.on;
+      root.classList.toggle("is-hot", hot > 0.5);
+      const px = screenPointer.x - canvas.offsetLeft;
+      const py = screenPointer.y - canvas.offsetTop;
       ctx.clearRect(0, 0, W, H);
       ctx.font = '22px "Kode Mono", ui-monospace, monospace';
       ctx.textAlign = "center";
@@ -61,13 +70,23 @@ export function Mug() {
       for (const w of wisps) {
         if (!reduced) {
           w.life += dt;
-          w.y -= w.vy * dt;
+          w.y -= w.vy * dt * (1 + hot * 0.7);
+          w.ox *= Math.exp(-dt * 1.6);
           if (Math.random() < dt * 1.4) w.glyph = (w.glyph + 1) % GLYPHS.length;
           if (w.y < -20) spawn(w, false);
         }
         const t = 1 - w.y / H;
-        const x = w.x + Math.sin(w.phase + w.life * 1.3 + t * 3) * w.sway * t;
-        const alpha = Math.sin(Math.min(1, Math.max(0, t)) * Math.PI) * 0.75;
+        let x = w.x + Math.sin(w.phase + w.life * 1.3 + t * 3) * w.sway * t + w.ox;
+        if (hot > 0.01 && !reduced) {
+          const dx = x - px;
+          const dy = w.y - py;
+          const d = Math.hypot(dx, dy);
+          if (d < 110) {
+            w.ox += (dx >= 0 ? 1 : -1) * (110 - d) * dt * 9 * hot;
+            x = w.x + Math.sin(w.phase + w.life * 1.3 + t * 3) * w.sway * t + w.ox;
+          }
+        }
+        const alpha = Math.sin(Math.min(1, Math.max(0, t)) * Math.PI) * (0.75 + hot * 0.25);
         ctx.fillStyle = `rgba(242,242,240,${alpha.toFixed(3)})`;
         ctx.fillText(GLYPHS[w.glyph], x, w.y);
       }

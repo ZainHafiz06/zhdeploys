@@ -398,7 +398,12 @@ export function buildTimeline(root: HTMLElement, track: HTMLElement, L: Layout, 
     return { tx: f.w / 2 - k * (x0 + x1) / 2, ty: f.h / 2 - k * (y0 + y1) / 2, k };
   };
   const camEl = $(".tour-cam");
-  let cam = frameOn(STACK_BOX, 0.78);
+  // The opening stack fills most of the frame; the edge feather only has to hide zoomed pages.
+  let cam = (() => {
+    const [x0, y0, x1, y1] = STACK_BOX;
+    const k = Math.min((f.w * 0.86) / (x1 - x0), (f.h * 0.86) / (y1 - y0));
+    return { tx: f.w / 2 - k * (x0 + x1) / 2, ty: f.h / 2 - k * (y0 + y1) / 2, k };
+  })();
   camEl.style.transform = `translate(${cam.tx}px, ${cam.ty}px) scale(${cam.k})`;
   const camTo = (t0: number, t1: number, to: typeof cam) => {
     add(camEl, t0, t1, { translateX: [cam.tx, to.tx], translateY: [cam.ty, to.ty], scale: [cam.k, to.k] }, "inOutCubic");

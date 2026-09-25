@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { PHONE, SCREEN, quadMatrix, type Layout } from "./geometry";
+import { PHONE, SCREEN, quadMatrix, unquad, type Layout } from "./geometry";
+import { screenPointer } from "./pointerState";
 import { fitPose, mixPose, screenQuad, straightPose, type RigPose } from "./laptopRig";
 import { Mug } from "./Mug";
 import { HazeApp } from "./apps/HazeApp";
@@ -141,12 +142,54 @@ export function Laptop({ layout, ctrl, reduced }: { layout: Layout; ctrl: React.
     let raf = 0;
     let lastKey = "";
 
+    // Hovering the opening laptop wakes it: it turns towards the pointer and
+    // the mug's steam reacts. Scrolling away hands it back to the timeline.
+    const [q0, q1, q2, q3] = layout.laptop.introQuad;
+    const [b0, b1] = layout.laptop.introBase;
+    const box = {
+      x0: Math.min(q0[0], q3[0], b0[0]) - 20,
+      x1: Math.max(q1[0], q2[0], b1[0]) + 20,
+      y0: Math.min(q0[1], q1[1]) - 20,
+      y1: Math.max(b0[1], b1[1]) + 10,
+    };
+    const ptr = { x: -1e4, y: -1e4, inside: false };
+    const onMove = (e: PointerEvent) => {
+      ptr.x = e.clientX;
+      ptr.y = e.clientY;
+      ptr.inside = e.pointerType !== "touch" && ptr.x > box.x0 && ptr.x < box.x1 && ptr.y > box.y0 && ptr.y < box.y1;
+    };
+    const onLeave = () => {
+      ptr.inside = false;
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    document.addEventListener("pointerleave", onLeave);
+    const tilt = { on: 0, x: 0, y: 0 };
+    const tiltQ = new THREE.Quaternion();
+    const tiltE = new THREE.Euler();
+    let lastNow = start;
+
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
       const { p, q, s } = ctrl.current;
       const time = (now - start) / 1000;
+      const dt = Math.min(0.05, (now - lastNow) / 1000);
+      lastNow = now;
 
       mixPose(intro, app, p, pose);
+
+      // Hover tilt, eased so it never snaps, and only on the opening pose.
+      const live = Math.max(0, 1 - p * 5) * (q === 0 && s === 0 ? 1 : 0);
+      const want = ptr.inside && !reduced ? live : 0;
+      const ease = 1 - Math.exp(-dt * 6);
+      tilt.on += (want - tilt.on) * ease;
+      const nx = Math.max(-1, Math.min(1, ((ptr.x - (box.x0 + box.x1) / 2) / (box.x1 - box.x0)) * 2));
+      const ny = Math.max(-1, Math.min(1, ((ptr.y - (box.y0 + box.y1) / 2) / (box.y1 - box.y0)) * 2));
+      tilt.x += ((ptr.inside ? nx : 0) - tilt.x) * ease;
+      tilt.y += ((ptr.inside ? ny : 0) - tilt.y) * ease;
+      if (tilt.on > 0.001) {
+        pose.q.multiply(tiltQ.setFromEuler(tiltE.set(tilt.y * 0.07 * tilt.on, tilt.x * 0.16 * tilt.on, 0)));
+        pose.t.z += 0.35 * tilt.on;
+      }
       // Ambient float: a slow bob always; a slight sway only while angled,
       // so the straight-on screen stays perfectly square.
       if (!reduced) {
@@ -158,7 +201,7 @@ export function Laptop({ layout, ctrl, reduced }: { layout: Layout; ctrl: React.
       // Translation only, so the screen stays perfectly square as it slides.
       pose.t.x += s * asideWorld;
 
-      const key = `${p.toFixed(5)}|${q.toFixed(5)}|${s.toFixed(5)}|${reduced ? 0 : Math.round(time * 60)}|${loaded}`;
+      const key = `${p.toFixed(5)}|${q.toFixed(5)}|${s.toFixed(5)}|${reduced ? 0 : Math.round(time * 60)}|${tilt.on.toFixed(4)}|${loaded}`;
       if (key === lastKey) return;
       lastKey = key;
 
@@ -166,7 +209,12 @@ export function Laptop({ layout, ctrl, reduced }: { layout: Layout; ctrl: React.
       rig.style.visibility = hidden ? "hidden" : "";
       if (hidden) return;
 
-      screen.style.transform = quadMatrix(SCREEN.w, SCREEN.h, screenQuad(pose, view));
+      const quad = screenQuad(pose, view);
+      screen.style.transform = quadMatrix(SCREEN.w, SCREEN.h, quad);
+      const [sx, sy] = unquad(SCREEN.w, SCREEN.h, quad, ptr.x, ptr.y);
+      screenPointer.x = sx;
+      screenPointer.y = sy;
+      screenPointer.on = tilt.on;
 
       if (renderer && loaded) {
         model.quaternion.copy(pose.q);
@@ -181,10 +229,13 @@ export function Laptop({ layout, ctrl, reduced }: { layout: Layout; ctrl: React.
 
     return () => {
       cancelAnimationFrame(raf);
+      window.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerleave", onLeave);
+      screenPointer.on = 0;
       scene.environment?.dispose();
       renderer?.dispose();
     };
-  }, [poses, ctrl, reduced]);
+  }, [poses, ctrl, reduced, layout]);
 
   return (
     <div className="laptop" ref={rigRef}>

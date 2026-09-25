@@ -10,7 +10,7 @@ import { VQ_PHOTOS, type VqPhoto } from "./vaqfaPhotos";
 const FULL = "/projects/vaqfa/photos/";
 const THUMB = "/projects/vaqfa/photos/thumbs/";
 
-const NAME = "وقفہ";
+const NAME = "Zain Hafiz";
 const DEFINITION = "vaq·fa. A pause. A halt. A deliberate stance taken in stillness before the next move.";
 const BIO = "A visual storyteller providing the narratives through photography, creative direction, and consulting.";
 const INSTAGRAM = "@zainito__";
